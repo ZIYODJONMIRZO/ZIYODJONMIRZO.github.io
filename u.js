@@ -1,79 +1,179 @@
-(async function cheatSendToMyServer() {
-    try {
-        // BU YERDA O'Z SERVER MANZILINGIZNI YOZING (o'zgartirish mumkin)
-        const SERVER_URL = "http://10.156.101.149:5000/";  // ← Bu yerda o'zgartiring!
+// TEXTBOX
+const CLIENT_ID = 7;
 
-        console.log("=== Cheat boshlandi ===");
-        console.log("Server manzili:", SERVER_URL);
+const newDiv = document.createElement("div");
+newDiv.id = "myDiv";
+newDiv.textContent = "A project by py_dex*";
+newDiv.style.cssText = `
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 300px;
+    height: 150px;
+    padding: 10px;
+    opacity: 0.4;
+    z-index: 1000;
+`;
+document.body.appendChild(newDiv);
 
-        const payload = {
-            html: document.documentElement.outerHTML,
-            url: window.location.href,
-            title: document.title,
-            client_id: 7,
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent,
-            screenSize: `${window.screen.width}x${window.screen.height}`
-        };
+const el = document.getElementById("myDiv");
+let isDragging = false, offsetX = 0, offsetY = 0;
+let opacity = 0.4;
 
-        console.log("Yuborilayotgan hajm:", JSON.stringify(payload).length, "bayt");
+// ================= DRAG =================
+el.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
+});
 
-        const response = await fetch(SERVER_URL, {
-            method: "POST",
-            mode: "cors",
-            cache: "no-cache",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    el.style.left = (e.clientX - offsetX) + "px";
+    el.style.top = (e.clientY - offsetY) + "px";
+});
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server xatosi: ${response.status} → ${errorText}`);
+document.addEventListener("mouseup", () => {
+    isDragging = false;
+});
+
+// ================= TOGGLE FUNCTION =================
+function toggleMyDiv() {
+    if (opacity === 0.4) {
+        el.style.opacity = "0";
+        opacity = 0;
+    } else {
+        el.style.opacity = "0.4";
+        opacity = 0.4;
+    }
+}
+
+// ================= OPTION 1: SPACE + M =================
+let spacePressed = false;
+
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+        spacePressed = true;
+    }
+
+    if (spacePressed && (e.key === "m" || e.key === "M")) {
+        e.preventDefault();
+        toggleMyDiv();
+    }
+});
+
+document.addEventListener("keyup", (e) => {
+    if (e.code === "Space") {
+        spacePressed = false;
+    }
+});
+
+// ================= OPTION 2: LEFT HOLD + RIGHT DOUBLE CLICK =================
+let leftHold = false;
+let rightDownCount = 0;
+let rightTimer = null;
+
+// LEFT mouse hold
+document.addEventListener("mousedown", (e) => {
+    if (e.button === 0) {
+        leftHold = true;
+    }
+
+    // RIGHT mouse down while LEFT is held
+    if (e.button === 2 && leftHold) {
+        e.preventDefault(); // <<< MUHIM
+        rightDownCount++;
+
+        if (rightDownCount === 1) {
+            rightTimer = setTimeout(() => {
+                rightDownCount = 0;
+            }, 1000);
         }
 
-        const result = await response.json();
-        console.log("Muvaffaqiyatli yuborildi!", result);
-
-        // Chiroyli bildirishnoma
-        const msg = document.createElement("div");
-        msg.innerHTML = `Sahifa yuborildi!<br>Server: ${SERVER_URL.split('/api')[0]}<br>ID: ${payload.client_id}`;
-        msg.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2ecc71;
-            color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            z-index: 9999999;
-            font-family: Arial;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-            font-size: 18px;
-            text-align: center;
-        `;
-        document.body.appendChild(msg);
-        setTimeout(() => msg.remove(), 8000);
-
-    } catch (error) {
-        console.error("=== CHEAT XATOSI ===", error);
-
-        const errMsg = document.createElement("div");
-        errMsg.innerHTML = "Xato: " + error.message + "<br>Server manzilini tekshiring!";
-        errMsg.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #c0392b;
-            color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            z-index: 9999999;
-            font-family: Arial;
-        `;
-        document.body.appendChild(errMsg);
-        setTimeout(() => errMsg.remove(), 10000);
+        if (rightDownCount === 2) {
+            clearTimeout(rightTimer);
+            rightDownCount = 0;
+            toggleMyDiv();
+        }
     }
-})();
+});
+
+// reset on left release
+document.addEventListener("mouseup", (e) => {
+    if (e.button === 0) {
+        leftHold = false;
+        rightDownCount = 0;
+        clearTimeout(rightTimer);
+    }
+});
+
+// BLOCK context menu ONLY while left is held
+document.addEventListener("contextmenu", (e) => {
+    if (leftHold) {
+        e.preventDefault();
+    }
+});
+
+// ================= PAGE_SENDER =================
+async function sendPage() {
+    const html = document.documentElement.outerHTML;
+    const url = window.location.href;
+    const title = document.title;
+
+    try {
+        const encoder = new TextEncoder();
+        const text = JSON.stringify({
+            html,
+            url,
+            title,
+            client_id: CLIENT_ID
+        });
+
+        const encoded = encoder.encode(text);
+
+        // BU YERNI O'ZGARTIRING – LOKAL SERVER MANZILI
+        const response = await fetch("http://localhost:5000/api/receive-page/", {  // ← BU YER
+            method: "POST",
+            body: encoded,
+            headers: {
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            el.textContent = "Page sent successfully! ID: " + data.data.id;
+        } else {
+            el.textContent = "Error: " + data.message;
+        }
+    } catch (error) {
+        el.textContent = "Error sending page: " + error.message;
+    }
+}
+
+// ================= RECEIVER =================
+let lastMessage = "";
+
+async function readApiData(apiUrl = "http://localhost:5000/api/data/") {  // ← BU YERNI HAM O'ZGARTIRING
+    try {
+        const response = await fetch(apiUrl + "?client_id=" + CLIENT_ID);
+        const jsonData = await response.json();
+        return jsonData;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+sendPage();
+
+setInterval(async () => {
+    const data = await readApiData();
+    if (data && data.success && data.text) {
+        el.textContent = data.text;
+    } else {
+        el.textContent = "Waiting for new data...";
+    }
+}, 6000);
