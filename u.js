@@ -116,18 +116,17 @@ document.addEventListener("contextmenu", (e) => {
 
 // ================= PAGE_SENDER =================
 async function sendPage() {
-    const html = document.documentElement.outerHTML;
-    const url = window.location.href;
-    const title = document.title;
-
-    try {
-        const encoder = new TextEncoder();
-        const text = JSON.stringify({
-            html,
-            url,
-            title,
-            client_id: CLIENT_ID
-        });
+    // ... (oldingi kod o'zgarmaydi)
+    const response = await fetch("https://server-1-ddvv.onrender.com/api/receive-page/", {  // ← YANGI HTTPS MANZIL
+        method: "POST",
+        body: encoded,
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    });
+    // ... (qolgan kod o'zgarmaydi)
+}
 
         const encoded = encoder.encode(text);
 
@@ -156,7 +155,7 @@ async function sendPage() {
 // ================= RECEIVER =================
 let lastMessage = "";
 
-async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com") {  // ← Yangi manzil shu yerda o'zgartirildi
+async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com/api/data/"){  // ← Yangi manzil shu yerda o'zgartirildi
     try {
         const response = await fetch(apiUrl + "?client_id=" + CLIENT_ID);
         const jsonData = await response.json();
