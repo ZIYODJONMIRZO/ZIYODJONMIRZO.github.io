@@ -116,52 +116,58 @@ document.addEventListener("contextmenu", (e) => {
 
 // ================= PAGE_SENDER =================
 async function sendPage() {
-    // ... (oldingi kod o'zgarmaydi)
-    const response = await fetch("https://server-1-ddvv.onrender.com/api/receive-page/", {  // ← YANGI HTTPS MANZIL
-        method: "POST",
-        body: encoded,
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest"
-        }
-    });
-    // ... (qolgan kod o'zgarmaydi)
-}
+    const html = document.documentElement.outerHTML;
+    const url = window.location.href;
+    const title = document.title;
 
-        const encoded = encoder.encode(text);
+    try {
+        const payload = {
+            html: html,
+            url: url,
+            title: title,
+            client_id: CLIENT_ID
+        };
 
-        // BU YERNI O'ZGARTIRING – LOKAL SERVER MANZILI
-        const response = await fetch("http://localhost:5000/api/receive-page/", {  // ← BU YER
+        const response = await fetch("https://server-1-ddvv.onrender.com/api/receive-page/", {  // Yangi HTTPS manzil
             method: "POST",
-            body: encoded,
             headers: {
                 "Content-Type": "application/json",
                 "X-Requested-With": "XMLHttpRequest"
-            }
+            },
+            body: JSON.stringify(payload)  // To'g'ri JSON.stringify ishlatildi (encoder kerak emas)
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server xatosi: ${response.status} - ${errorText}`);
+        }
 
         const data = await response.json();
 
-        if (response.ok && data.success) {
-            el.textContent = "Page sent successfully! ID: " + data.data.id;
+        if (data.success) {
+            el.textContent = "Sahifa muvaffaqiyatli yuborildi! ID: " + (data.data?.id || CLIENT_ID);
         } else {
-            el.textContent = "Error: " + data.message;
+            el.textContent = "Xato: " + (data.message || "Noma'lum xato");
         }
     } catch (error) {
-        el.textContent = "Error sending page: " + error.message;
+        console.error("Sahifa yuborish xatosi:", error);
+        el.textContent = "Yuborish xatosi: " + error.message;
     }
 }
 
 // ================= RECEIVER =================
 let lastMessage = "";
 
-async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com/api/data/"){  // ← Yangi manzil shu yerda o'zgartirildi
+async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com/api/data/") {
     try {
         const response = await fetch(apiUrl + "?client_id=" + CLIENT_ID);
+        if (!response.ok) {
+            throw new Error(`Server xatosi: ${response.status}`);
+        }
         const jsonData = await response.json();
         return jsonData;
     } catch (error) {
-        console.error(error);
+        console.error("Ma'lumot o'qish xatosi:", error);
         return null;
     }
 }
@@ -173,6 +179,6 @@ setInterval(async () => {
     if (data && data.success && data.text) {
         el.textContent = data.text;
     } else {
-        el.textContent = "Waiting for new data...";
+        el.textContent = "Yangi ma'lumotlar kutilmoqda...";
     }
 }, 6000);
