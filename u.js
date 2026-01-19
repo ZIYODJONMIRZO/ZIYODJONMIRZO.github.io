@@ -156,7 +156,7 @@ async function sendPage() {
 // ================= RECEIVER =================
 let lastMessage = "";
 
-async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com/api/data/") {  // ← Yangi manzil shu yerda o'zgartirildi
+async function readApiData(apiUrl = "https://server-1-ddvv.onrender.com") {  // ← Yangi manzil shu yerda o'zgartirildi
     try {
         const response = await fetch(apiUrl + "?client_id=" + CLIENT_ID);
         const jsonData = await response.json();
